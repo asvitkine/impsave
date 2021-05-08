@@ -1,5 +1,6 @@
 package impsave;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -190,7 +191,7 @@ public class SaveDb {
 		return null;
 	}
 
-	private void copyFileContents(File file, OutputStream out, String gameName) throws IOException {
+	private void copyFileOrZipContents(File file, OutputStream out, String gameName) throws IOException {
 		FileInputStream in = new FileInputStream(file);
 		InputStream source;
 
@@ -240,7 +241,7 @@ public class SaveDb {
 	public void activateFile(File file, File dest, String gameName) throws IOException {
 		FileOutputStream out = new FileOutputStream(dest);
 		try {
-			copyFileContents(file, out, gameName);
+			copyFileOrZipContents(file, out, gameName);
 			getGameFileContents(dest).savedGameName = gameName;
 		} catch (IOException e) {
 			dest.delete();
@@ -263,13 +264,19 @@ public class SaveDb {
 		}
 	}
 
+	private byte[] readFileOrZipContents(File file) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		copyFileOrZipContents(file, out, null);
+		return out.toByteArray();
+	}
+
 	private SaveDb.GameFileContents getGameFileContents(File f) throws IOException {
 		SaveDb.GameFileContents contents = getGameInfo(f);
 		if (contents != null)
 			return contents;
 		byte[] data;
 		if (f.getName().endsWith(".zip")) {
-			data = Utils.readFile(f);
+			data = readFileOrZipContents(f);
 		} else {
 			data = Utils.readFileN(f, SaveParser.MAX_OFFSET);
 		}

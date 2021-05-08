@@ -96,11 +96,11 @@ public class Patcher {
 			"8B46108B4E2483C0288946048D04888B" +
 			"CE89460CE8F076F8FF33C05F40");
 
-		// Fix null deref at 0x4d6f81.
+		// Fix crash at 0x4eaecc during "next turn".
 		patches.addJmpPatch(0x4eaec7, 0x47c0bc, "E8C5CDF8FF85C07501C20400E9FFED0600");
-		// Fix null deref at 0x61d89b.
+		// Fix null deref at 0x4d6f81.
 		patches.addJmpPatch(0x4d6f7e, 0x47c0cd, "FF524C85C00F84B1AE05008B10E9A4AE0500");
-		// Fix null deref at 0x489d94.
+		// Fix null deref at 0x61d89b.
 		patches.addJmpPatch(0x61D89B, 0x47c0df, "85C9750331C0C38B8198000000C3");
 		// Fix a couple calls to 0x1.
 		patches.addJmpBackPatch(0x489d94, 0x47c0ed, 0x489d9a, "85D2740F83BA9C010000017406FF929C010000");

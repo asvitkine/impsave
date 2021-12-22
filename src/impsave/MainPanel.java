@@ -1,6 +1,7 @@
 package impsave;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.io.File;
 
 import javax.swing.*;
@@ -19,13 +20,13 @@ public class MainPanel extends JFrame implements ChangeListener {
 		tabs.addChangeListener(this);
 		restoreTreePanel =  new RestoreTreePanel(saveFolder);
 		tabs.add("Restore", restoreTreePanel);
-	
+
 		getContentPane().add(new LaunchPanel(imperialismApp), BorderLayout.NORTH);
 		getContentPane().add(tabs);
-		//getContentPane().add(createButtons(), BorderLayout.SOUTH);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(600, 440);
+		setSize(620, 440);
+		setMinimumSize(new Dimension(620, 440));
 		setLocationRelativeTo(null);
 	}
 

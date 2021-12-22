@@ -162,7 +162,9 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		add(new JLabel("<html><b>Comment</b>:"));
 		comment = new JTextArea(saveDb.getComment(info.gameId));
 		comment.addKeyListener(this);
-		add(new JScrollPane(comment));
+		JScrollPane scroll = new JScrollPane(comment);
+		scroll.setPreferredSize(new Dimension(1024, 5000));
+		add(scroll);
 
 		if (SaveDb.JOINED_GAME_PREFIX.equals(info.fileNamePrefix)) {
 			add(Box.createVerticalStrut(20));

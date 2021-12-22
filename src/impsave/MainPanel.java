@@ -12,7 +12,7 @@ public class MainPanel extends JFrame implements ChangeListener {
 	private JTabbedPane tabs;
 	private RestoreTreePanel restoreTreePanel;
 
-	public MainPanel(String title, File saveFolder, File imperialismApp) {
+	public MainPanel(String title, String footer, File saveFolder, File imperialismApp) {
 		super(title);
 
 		tabs = new JTabbedPane();
@@ -23,6 +23,9 @@ public class MainPanel extends JFrame implements ChangeListener {
 
 		getContentPane().add(new LaunchPanel(imperialismApp), BorderLayout.NORTH);
 		getContentPane().add(tabs);
+		JLabel label = new JLabel(footer, SwingConstants.CENTER);
+		label.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+		getContentPane().add(label, BorderLayout.SOUTH);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(620, 440);

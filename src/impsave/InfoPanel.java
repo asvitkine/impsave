@@ -9,6 +9,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -27,9 +29,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
-public class InfoPanel extends JPanel implements ItemListener, KeyListener, ActionListener {
+public class InfoPanel extends JPanel implements ItemListener, KeyListener, ActionListener, AncestorListener {
 	private SaveDb saveDb;
 	private GameInfo info;
 	private JTextField gameNameField;
@@ -37,6 +42,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 	private JButton[] restoreButtons;
 	private JTextArea comment;
 	private Timer timer;
+	private WindowAdapter windowListener;
 
 	public InfoPanel(SaveDb saveDb) {
 		this.saveDb = saveDb;
@@ -45,6 +51,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		// Save comments after 0.5s after last key type.
 		timer = new Timer(500, this);
 		timer.setRepeats(false);
+		this.addAncestorListener(this);
 	}
 
 	private void saveComments() {
@@ -85,7 +92,8 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		// Restore button clicked.
 
 		// Copy over the selected file...
-		String buttonText = ((JButton) event.getSource()).getText();
+		JButton button = (JButton) event.getSource();
+		String buttonText = button.getText();
 		String targetName = null;
 		for (int i = 0; i < 8; i++) {
 			if (buttonText.startsWith(getRestoreButtonNamePrefix(i))) {
@@ -99,6 +107,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		if (targetName == null) {
 			String suffix = " autosaves";
 			if (!parentDirName.endsWith(suffix)) {
+				// FIXME
 				System.out.println("ERROR: Unexpected dir name: " + parentDir);
 				return;
 			}
@@ -114,10 +123,8 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		}
 		System.out.println("Activated as: " + targetName);
 
-		JButton button = (JButton) event.getSource();
-		// FIXME
-		button.setText("    Game selected    ");
-		button.setEnabled(false);
+		itemStateChanged(null);
+		JOptionPane.showMessageDialog(this, "Game selected for restore");
 	}
 
 	private void addRow(String label, JComponent right) {
@@ -194,6 +201,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 			}
 			add(grid);
 		}
+		saveDb.scanForUpdates();
 		itemStateChanged(null);
 		revalidate();
 		repaint();
@@ -204,7 +212,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 	}
 
 	@Override
-	public void itemStateChanged(ItemEvent event) {
+	public void itemStateChanged(ItemEvent unused) {
 		int i = 0;
 		for (JButton button : restoreButtons) {
 			if (restoreButtons.length == 8) {
@@ -267,5 +275,35 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 	public File getFileToRestore() {
 		TurnEntry entry = (TurnEntry) turnSelector.getSelectedItem();
 		return entry.file;
+	}
+
+	private void updateSaveGameButtonNames() {
+		if (saveDb.scanForUpdates()) {
+			itemStateChanged(null);
+		}
+	}
+
+	@Override
+	public void ancestorAdded(AncestorEvent event) {
+		// Update save game buttons when this panel is made visible (e.g. switching tabs)
+		// and when the window gets activated (e.g. switching to the app).
+		updateSaveGameButtonNames();
+		if (windowListener == null) {
+			windowListener = new WindowAdapter() {
+				@Override
+			    public void windowActivated(WindowEvent e) {
+					updateSaveGameButtonNames();
+			    }
+			};
+			SwingUtilities.getWindowAncestor(this).addWindowListener(windowListener);
+		}
+	}
+
+	@Override
+	public void ancestorRemoved(AncestorEvent event) {
+	}
+
+	@Override
+	public void ancestorMoved(AncestorEvent event) {
 	}
 }

@@ -31,6 +31,7 @@ public class SaveDb {
 	private File saveFolder;
 	private SavedGames savedGames;
 	private HashMap<File, GameFileContents> gameFileCache;
+	private HashMap<File, FileMonitor> fileMonitors;
 	private XmlSerializer xml;
 	private HashMap<String, GameInfo> soloGames;
 	private HashMap<String, GameInfo> hostedGames;
@@ -40,6 +41,7 @@ public class SaveDb {
 		this.saveFolder = saveFolder;
 		savedGames = new SavedGames();
 		gameFileCache = new HashMap<File, GameFileContents>();
+		fileMonitors = new HashMap<File, FileMonitor>();
 		xml = new XmlSerializer();
 		load();
 	}
@@ -69,6 +71,29 @@ public class SaveDb {
 		savedGames.games.add(game);
 	}
 
+	public boolean scanForUpdates() {
+		System.out.println("Check for updates...");
+		boolean updated = false;
+		for (File f : saveFolder.listFiles()) {
+			if (ignoreFile(f) || !Utils.startsWithOneOf(f.getName(), JOINED_GAME_PREFIX, SOLO_GAME_PREFIX, HOSTED_GAME_PREFIX))
+				continue;
+
+			try {
+				if (updateGameFileContents(f)) {
+					System.out.println("File " + f + " updated.");
+					updated = true;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		if (updated) {
+			save();
+		}
+		return updated;
+	}
+
 	public void scan() {
 		System.out.println("Scanning...");
 		soloGames = new HashMap<String, GameInfo>();
@@ -96,19 +121,23 @@ public class SaveDb {
 	}
 
 	private void updateGamesFromBackups(HashMap<String, GameInfo> games, File sourceFile, String prefix) {
-		processGameFile(games, sourceFile, prefix);
+		// For the file in the save folder, load it uncached first to pick up any new content.
+		processGameFile(games, sourceFile, prefix, true);
 		File dir = FileAutoSaver.getBackupDir(sourceFile);
 		if (!dir.isDirectory())
 			return;
 		for (File f : dir.listFiles()) {
 			if (!Utils.endsWithOneOf(f.getName(), EXTS))
 				continue;
-			processGameFile(games, f, prefix);
+			processGameFile(games, f, prefix, false);
 		}
 	}
 
-	private void processGameFile(HashMap<String, GameInfo> games, File f, String prefix) {
+	private void processGameFile(HashMap<String, GameInfo> games, File f, String prefix, boolean refresh) {
 		try {
+			if (refresh) {
+				updateGameFileContents(f);
+			}
 			SaveDb.GameFileContents contents = getGameFileContents(f);
 
 			GameInfo info = games.get(contents.getId());
@@ -226,6 +255,7 @@ public class SaveDb {
 		} finally {
 			out.close();
 		}
+		save();
 	}
 
 	private String getSaveGameName(String filename) {
@@ -252,6 +282,23 @@ public class SaveDb {
 		SaveDb.GameFileContents contents = getGameInfo(f);
 		if (contents != null)
 			return contents;
+		return readAndCacheGameFileContents(f);
+	}
+
+	private boolean updateGameFileContents(File f) throws IOException {
+		FileMonitor monitor = fileMonitors.get(f);
+		boolean hasChanged = (monitor == null || monitor.hasChanged());
+		if (monitor == null) {
+			monitor = new FileMonitor(f);
+			fileMonitors.put(f, monitor);
+		}
+		if (hasChanged) {
+			readAndCacheGameFileContents(f);
+		}
+		return hasChanged;
+	}
+
+	private SaveDb.GameFileContents readAndCacheGameFileContents(File f) throws IOException {
 		byte[] data;
 		if (f.getName().endsWith(".zip")) {
 			data = readFileOrZipContents(f);
@@ -259,7 +306,7 @@ public class SaveDb {
 			data = Utils.readFileN(f, SaveParser.MAX_OFFSET);
 		}
 		SaveParser sp = new SaveParser(data);
-		contents = sp.getGameFileContents();
+		SaveDb.GameFileContents contents = sp.getGameFileContents();
 		contents.setFile(Utils.getRelativePath(f, saveFolder));
 		putGameInfo(contents);
 		return contents;

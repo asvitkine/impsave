@@ -15,6 +15,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 	private SaveDb saveDb;
@@ -54,6 +55,7 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 		root.add(joinedNode);
 
 		tree = new JTree(root);
+	    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.expandPath(new TreePath(soloNode.getPath()));
 		tree.expandPath(new TreePath(hostedNode.getPath()));
 		tree.expandPath(new TreePath(joinedNode.getPath()));
@@ -105,8 +107,7 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 
 		Object info = node.getUserObject();
 		if (info instanceof GameInfo) {
-			selection = new String[] { e.getPath().getPathComponent(1).toString(),
-					e.getPath().getPathComponent(2).toString()};
+			selection = new String[] { node.getParent().toString(), node.toString() };
 			infoPanel.setGameInfo((GameInfo) info);
 		} else {
 			selection = null;

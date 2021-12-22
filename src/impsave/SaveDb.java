@@ -3,7 +3,6 @@ package impsave;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -310,7 +309,7 @@ public class SaveDb {
 		System.out.println("Writing to " + file);
 		try {
 			xml.writeSavedGames(savedGames, new FileOutputStream(file));
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

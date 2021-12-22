@@ -14,14 +14,14 @@ public class FolderMonitor implements Runnable {
 		this.ext = ext;
 		this.idler = idler;
 	}
-	
+
+	@Override
 	public void run() {
 		HashMap<File, FileAutoSaver> savers = new HashMap<File, FileAutoSaver>();
 		while (true) {
 			for (File file : folder.listFiles()) {
 				if (!file.isFile() || file.isHidden() || !file.getName().endsWith(ext))
 					continue;
-				// FIXME: Don't throw exceptions from here.
 				try {
 					monitorFile(savers, file);
 				} catch (IOException e) {
@@ -31,7 +31,7 @@ public class FolderMonitor implements Runnable {
 			idler.run();
 		}
 	}
-	
+
 	private void monitorFile(HashMap<File, FileAutoSaver> savers, File file) throws IOException {
 		FileAutoSaver saver = savers.get(file);
 		if (saver == null) {

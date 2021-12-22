@@ -12,7 +12,7 @@ public class Main implements Runnable {
 	public void run() {
 		Context context = new Context();
 		String appName = computeAppTitle(context.getJarOrAppFile().getName());
-		String footer = computeFooterText(appName);
+		String footer = computeFooterText();
 		File folder = context.getSaveDirectory();
 		MainPanel c = new MainPanel(appName, footer, folder, context.getImperialismApp());
 		c.setVisible(true);
@@ -33,8 +33,8 @@ public class Main implements Runnable {
 		return appTitle;
 	}
 
-	private static String computeFooterText(String appName) {
-		return appName + ". In Memory of Aaron Kaufman (1986-2021).";
+	private static String computeFooterText() {
+		return "ImpSave v" + VERSION + ". In Memory of Aaron Kaufman (1986-2021).";
 	}
 
 	public static void main(String[] args) throws IOException {

@@ -3,6 +3,7 @@ package impsave;
 import java.awt.BorderLayout;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -12,6 +13,7 @@ import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
@@ -19,6 +21,7 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 
 	private InfoPanel infoPanel;
 	private JTree tree;
+	private String[] selection;
 
 	public RestoreTreePanel(File saveFolder) {
 		this.saveDb = new SaveDb(saveFolder);
@@ -27,6 +30,15 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 
 	public void clear() {
 		removeAll();
+	}
+
+	private TreeNode findChildNodeByName(TreeNode node, String name) {
+		for (TreeNode child : Collections.list(node.children())) {
+			if (name.equals(child.toString())) {
+				return child;
+			}
+		}
+		return null;
 	}
 
 	public void load() {
@@ -47,6 +59,18 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 		tree.expandPath(new TreePath(joinedNode.getPath()));
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
+
+		// Restore the previous selection. We have to walk the nodes because the tree
+		// was recreated and won't accept the previous one's TreePath.
+		if (selection != null) {
+			TreeNode folder = findChildNodeByName(root, selection[0]);
+			if (folder != null) {
+				TreeNode leaf = findChildNodeByName(folder, selection[1]);
+				if (leaf != null) {
+					tree.setSelectionPath(new TreePath(new Object[] { root, folder, leaf }));
+				}
+			}
+		}
 
 		tree.addTreeSelectionListener(this);
 
@@ -81,8 +105,11 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 
 		Object info = node.getUserObject();
 		if (info instanceof GameInfo) {
+			selection = new String[] { e.getPath().getPathComponent(1).toString(),
+					e.getPath().getPathComponent(2).toString()};
 			infoPanel.setGameInfo((GameInfo) info);
 		} else {
+			selection = null;
 			infoPanel.setGameInfo(null);
 		}
 	}

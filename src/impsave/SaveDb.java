@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +17,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.swing.JOptionPane;
-
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.security.NoTypePermission;
-import com.thoughtworks.xstream.security.NullPermission;
-import com.thoughtworks.xstream.security.PrimitiveTypePermission;
 
 import crockford.CrockfordBase32;
 
@@ -38,7 +32,7 @@ public class SaveDb {
 	private File saveFolder;
 	private SavedGames savedGames;
 	private HashMap<File, GameFileContents> gameFileCache;
-	private XStream xstream;
+	private XmlSerializer xml;
 	private HashMap<String, GameInfo> soloGames;
 	private HashMap<String, GameInfo> hostedGames;
 	private HashMap<String, GameInfo> joinedGames;
@@ -47,23 +41,8 @@ public class SaveDb {
 		this.saveFolder = saveFolder;
 		savedGames = new SavedGames();
 		gameFileCache = new HashMap<File, GameFileContents>();
-		xstream = createXStream();
+		xml = new XmlSerializer();
 		load();
-	}
-
-	private static XStream createXStream() {
-		XStream xstream = new XStream();
-		xstream.addPermission(NoTypePermission.NONE);
-		xstream.addPermission(NullPermission.NULL);
-		xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
-		xstream.allowTypeHierarchy(String.class);
-		xstream.allowTypeHierarchy(Collection.class);
-		xstream.allowTypesByWildcard(new String[] {
-			SaveDb.class.getPackage().getName() + ".*"
-		});
-		xstream.alias("game", GameFileContents.class);
-		xstream.alias("imp-save-db", SavedGames.class);
-		return xstream;
 	}
 
 	public HashMap<String, GameInfo> getSoloGames() {
@@ -310,7 +289,7 @@ public class SaveDb {
 
 		System.out.println("Loading " + file);
 		try {
-			savedGames = (SavedGames) xstream.fromXML(file);
+			savedGames = xml.readSavedGames(file);
 		} catch (Exception e) {
 			System.out.println("Error loading file: " + file);
 			File backupFile = Utils.addFileNameSuffix(file, generateBackupSuffix());
@@ -330,7 +309,7 @@ public class SaveDb {
 		File file = getFile();
 		System.out.println("Writing to " + file);
 		try {
-			xstream.toXML(savedGames, new FileOutputStream(file));
+			xml.writeSavedGames(savedGames, new FileOutputStream(file));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}

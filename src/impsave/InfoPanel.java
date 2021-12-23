@@ -87,7 +87,6 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 			JOptionPane.showMessageDialog(null, "Invalid save game name: " + gameName);
 			return;
 		}
-
 		// Restore button clicked.
 
 		// Copy over the selected file...
@@ -104,24 +103,27 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		String parentDirName = parentDir.getName();
 		System.out.printf("Activating [%s/%s]\n", parentDirName, file.getName());
 		if (targetName == null) {
+			// Either it's an autosave or the button text is out of sync with the database.
 			String suffix = " autosaves";
 			if (!parentDirName.endsWith(suffix)) {
-				// FIXME
+				JOptionPane.showMessageDialog(this, "Could not restore game.");
 				System.out.println("ERROR: Unexpected dir name: " + parentDir);
 				return;
 			}
 			targetName = parentDirName.substring(0, parentDirName.length() - suffix.length());
+
 		}
 		File dest = new File(parentDir.getParentFile().getAbsolutePath() + "/" + targetName);
 		try {
 			saveDb.activateFile(file, dest, gameName);
 		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, "Could not restore game.");
 			System.err.println("Error activating: " + e.getMessage());
 			e.printStackTrace();
 			return;
 		}
 		System.out.println("Activated as: " + targetName);
-		JOptionPane.showMessageDialog(this, "Game selected for restore");
+		JOptionPane.showMessageDialog(this, "Game selected for restore.");
 	}
 
 	private void addRow(String label, JComponent right) {
@@ -183,6 +185,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 					BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 			grid.setLayout(new GridLayout(5, 2));
 			JButton button = new JButton("- Autosave -");
+			button.addActionListener(this);
 			grid.add(button);
 			grid.add(new JPanel());
 			restoreButtons = new JButton[8];

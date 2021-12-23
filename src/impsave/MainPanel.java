@@ -39,7 +39,11 @@ public class MainPanel extends JFrame implements ChangeListener {
 		    public void windowDeactivated(WindowEvent e) {
 				// On background, switch back to the log panel so that
 				// switching to the restore panel triggers a reload.
-				tabs.setSelectedIndex(0);
+				// Only do this when opposite window is null, so that message
+				// boxes in our app don't trigger it.
+				if (e.getOppositeWindow() == null) {
+					tabs.setSelectedIndex(0);
+				}
 			}
 		});
 	}

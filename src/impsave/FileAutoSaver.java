@@ -43,6 +43,7 @@ public class FileAutoSaver implements Runnable {
 
 		if (firstPass) {
 			saveDb.fileUpdated(file, content);
+			firstPass = false;
 			return;
 		}
 

@@ -102,6 +102,14 @@ public class Utils {
 		return result;
 	}
 
+	public static String truncateAtChar(String str, char c) {
+		int index = str.indexOf(c);
+		if (index != -1) {
+			str = str.substring(0, index);
+		}
+		return str;
+	}
+
 	public static boolean endsWithOneOf(String str, String... suffixes) {
 		for (String suffix : suffixes) {
 			if (str.endsWith(suffix)) {

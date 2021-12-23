@@ -2,6 +2,8 @@ package impsave;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 
 import javax.swing.*;
@@ -31,6 +33,15 @@ public class MainPanel extends JFrame implements ChangeListener {
 		setSize(620, 440);
 		setMinimumSize(new Dimension(620, 440));
 		setLocationRelativeTo(null);
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+		    public void windowDeactivated(WindowEvent e) {
+				// On background, switch back to the log panel so that
+				// switching to the restore panel triggers a reload.
+				tabs.setSelectedIndex(0);
+			}
+		});
 	}
 
 	@Override

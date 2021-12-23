@@ -33,9 +33,9 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 		removeAll();
 	}
 
-	private TreeNode findChildNodeByName(TreeNode node, String name) {
+	private TreeNode findChildNodeByPrefix(TreeNode node, String prefix) {
 		for (TreeNode child : Collections.list(node.children())) {
-			if (name.equals(child.toString())) {
+			if (child.toString().startsWith(prefix)) {
 				return child;
 			}
 		}
@@ -62,23 +62,23 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 		tree.setRootVisible(false);
 		tree.setShowsRootHandles(true);
 
-		// Restore the previous selection. We have to walk the nodes because the tree
-		// was recreated and won't accept the previous one's TreePath.
-		if (selection != null) {
-			TreeNode folder = findChildNodeByName(root, selection[0]);
-			if (folder != null) {
-				TreeNode leaf = findChildNodeByName(folder, selection[1]);
-				if (leaf != null) {
-					tree.setSelectionPath(new TreePath(new Object[] { root, folder, leaf }));
-				}
-			}
-		}
-
 		tree.addTreeSelectionListener(this);
 
 		setLayout(new BorderLayout());
 		add(new JScrollPane(tree), BorderLayout.WEST);
 		add(infoPanel, BorderLayout.CENTER);
+
+		// Restore the previous selection. We have to walk the nodes because the tree
+		// was recreated and won't accept the previous one's TreePath.
+		if (selection != null) {
+			TreeNode folder = findChildNodeByPrefix(root, selection[0]);
+			if (folder != null) {
+				TreeNode leaf = findChildNodeByPrefix(folder, selection[1]);
+				if (leaf != null) {
+					tree.setSelectionPath(new TreePath(new Object[] { root, folder, leaf }));
+				}
+			}
+		}
 	}
 
 	private DefaultMutableTreeNode createNodes(HashMap<String, GameInfo> games, String name) {
@@ -100,14 +100,14 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 	}
 
 	@Override
-	public void valueChanged(TreeSelectionEvent e) {
+	public void valueChanged(TreeSelectionEvent unused) {
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
 		if (node == null)
 			return;
 
 		Object info = node.getUserObject();
 		if (info instanceof GameInfo) {
-			selection = new String[] { node.getParent().toString(), node.toString() };
+			selection = new String[] { node.getParent().toString(), Utils.truncateAtChar(node.toString(), ' ') };
 			infoPanel.setGameInfo((GameInfo) info);
 		} else {
 			selection = null;

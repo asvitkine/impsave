@@ -16,10 +16,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import crockford.CrockfordBase32;
 
-// TODO: Update game names as we find copies.
 public class SaveDb {
 	private static final String EXT = ".imp";
 	private static final String[] EXTS = new String[] { EXT, EXT + ".zip" };
@@ -31,70 +31,50 @@ public class SaveDb {
 	private File saveFolder;
 	private SavedGames savedGames;
 	private HashMap<File, GameFileContents> gameFileCache;
-	private HashMap<File, FileMonitor> fileMonitors;
 	private XmlSerializer xml;
 	private HashMap<String, GameInfo> soloGames;
 	private HashMap<String, GameInfo> hostedGames;
 	private HashMap<String, GameInfo> joinedGames;
+	private ArrayList<Runnable> saveGameNameListeners;
 
 	public SaveDb(File saveFolder) {
 		this.saveFolder = saveFolder;
 		savedGames = new SavedGames();
 		gameFileCache = new HashMap<File, GameFileContents>();
-		fileMonitors = new HashMap<File, FileMonitor>();
+		saveGameNameListeners = new ArrayList<Runnable>();
 		xml = new XmlSerializer();
 		load();
 	}
 
-	public HashMap<String, GameInfo> getSoloGames() {
-		return soloGames;
+	public synchronized void addSaveGameNameListener(Runnable listener) {
+		saveGameNameListeners.add(listener);
 	}
 
-	public HashMap<String, GameInfo> getHostedGames() {
-		return hostedGames;
+	public synchronized void removeSaveGameNameListener(Runnable listener) {
+		saveGameNameListeners.remove(listener);
 	}
 
-	public HashMap<String, GameInfo> getJoinedGames() {
-		return joinedGames;
+	public synchronized HashMap<String, GameInfo> getSoloGames() {
+		return new HashMap<String, GameInfo>(soloGames);
+	}
+
+	public synchronized HashMap<String, GameInfo> getHostedGames() {
+		return new HashMap<String, GameInfo>(hostedGames);
+	}
+
+	public synchronized HashMap<String, GameInfo> getJoinedGames() {
+		return new HashMap<String, GameInfo>(joinedGames);
 	}
 
 	private File getFile() {
 		return new File(saveFolder, "imp_save_db.xml");
 	}
 
-	public GameFileContents getGameInfo(File f) {
+	public synchronized GameFileContents getGameInfo(File f) {
 		return gameFileCache.get(f);
 	}
 
-	public void putGameInfo(GameFileContents game) {
-		gameFileCache.put(new File(saveFolder + "/" + game.filePath), game);
-		savedGames.games.add(game);
-	}
-
-	public boolean scanForUpdates() {
-		System.out.println("Check for updates...");
-		boolean updated = false;
-		for (File f : saveFolder.listFiles()) {
-			if (ignoreFile(f) || !Utils.startsWithOneOf(f.getName(), JOINED_GAME_PREFIX, SOLO_GAME_PREFIX, HOSTED_GAME_PREFIX))
-				continue;
-
-			try {
-				if (updateGameFileContents(f)) {
-					System.out.println("File " + f + " updated.");
-					updated = true;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (updated) {
-			save();
-		}
-		return updated;
-	}
-
-	public void scan() {
+	public synchronized void scan() {
 		System.out.println("Scanning...");
 		soloGames = new HashMap<String, GameInfo>();
 		hostedGames = new HashMap<String, GameInfo>();
@@ -107,10 +87,12 @@ public class SaveDb {
 			if (f.getName().startsWith(JOINED_GAME_PREFIX))
 				updateGamesFromBackups(joinedGames, f, JOINED_GAME_PREFIX);
 
-			// Solo games are auto-saved to slotA.imp and manually saved to slot0.imp to slot7.imp.
+			// Solo games are auto-saved to slotA.imp and manually saved to slot0.imp to
+			// slot7.imp.
 			if (f.getName().startsWith(SOLO_GAME_PREFIX))
 				updateGamesFromBackups(soloGames, f, SOLO_GAME_PREFIX);
-			// Hosted games are auto-saved to multA.imp and manually saved to mult0.imp to mult7.imp.
+			// Hosted games are auto-saved to multA.imp and manually saved to mult0.imp to
+			// mult7.imp.
 			if (f.getName().startsWith(HOSTED_GAME_PREFIX))
 				updateGamesFromBackups(hostedGames, f, HOSTED_GAME_PREFIX);
 		}
@@ -121,23 +103,19 @@ public class SaveDb {
 	}
 
 	private void updateGamesFromBackups(HashMap<String, GameInfo> games, File sourceFile, String prefix) {
-		// For the file in the save folder, load it uncached first to pick up any new content.
-		processGameFile(games, sourceFile, prefix, true);
+		processGameFile(games, sourceFile, prefix);
 		File dir = FileAutoSaver.getBackupDir(sourceFile);
 		if (!dir.isDirectory())
 			return;
 		for (File f : dir.listFiles()) {
 			if (!Utils.endsWithOneOf(f.getName(), EXTS))
 				continue;
-			processGameFile(games, f, prefix, false);
+			processGameFile(games, f, prefix);
 		}
 	}
 
-	private void processGameFile(HashMap<String, GameInfo> games, File f, String prefix, boolean refresh) {
+	private void processGameFile(HashMap<String, GameInfo> games, File f, String prefix) {
 		try {
-			if (refresh) {
-				updateGameFileContents(f);
-			}
 			SaveDb.GameFileContents contents = getGameFileContents(f);
 
 			GameInfo info = games.get(contents.getId());
@@ -168,31 +146,31 @@ public class SaveDb {
 		}
 	}
 
-	public String getFilename(String prefix, int index) {
+	public synchronized String getFilename(String prefix, int index) {
 		return prefix + index + EXT;
 	}
 
-	public String getSoloFileName(int index) {
+	public synchronized String getSoloFileName(int index) {
 		return getFilename(SOLO_GAME_PREFIX, index);
 	}
 
-	public String getSoloSaveGameName(int index) {
+	public synchronized String getSoloSaveGameName(int index) {
 		return getSaveGameName(getSoloFileName(index));
 	}
 
-	public String getMultiFileName(int index) {
+	public synchronized String getMultiFileName(int index) {
 		return getFilename(HOSTED_GAME_PREFIX, index);
 	}
 
-	public String getHostedSaveGameName(int index) {
+	public synchronized String getHostedSaveGameName(int index) {
 		return getSaveGameName(getMultiFileName(index));
 	}
 
-	public String getOriginalFileName(File file) {
+	public synchronized String getOriginalFileName(File file) {
 		String parentDirName = file.getParentFile().getName();
 		String suffix = " autosaves";
-		if (parentDirName.endsWith(suffix) &&
-			Utils.startsWithOneOf(parentDirName, SOLO_GAME_PREFIX, HOSTED_GAME_PREFIX)) {
+		if (parentDirName.endsWith(suffix)
+				&& Utils.startsWithOneOf(parentDirName, SOLO_GAME_PREFIX, HOSTED_GAME_PREFIX)) {
 			return parentDirName.substring(0, parentDirName.length() - suffix.length());
 		}
 		return null;
@@ -239,23 +217,21 @@ public class SaveDb {
 		}
 		Utils.copy(source, out);
 		if (zin != null) {
-	        zin.closeEntry();
-	    	zin.close();
+			zin.closeEntry();
+			zin.close();
 		}
 		in.close();
 	}
 
-	public void activateFile(File file, File dest, String gameName) throws IOException {
+	public synchronized void activateFile(File file, File dest, String gameName) throws IOException {
 		FileOutputStream out = new FileOutputStream(dest);
 		try {
 			copyFileOrZipContents(file, out, gameName);
-			getGameFileContents(dest).savedGameName = gameName;
 		} catch (IOException e) {
 			dest.delete();
 		} finally {
 			out.close();
 		}
-		save();
 	}
 
 	private String getSaveGameName(String filename) {
@@ -282,40 +258,59 @@ public class SaveDb {
 		SaveDb.GameFileContents contents = getGameInfo(f);
 		if (contents != null)
 			return contents;
-		return readAndCacheGameFileContents(f);
-	}
-
-	private boolean updateGameFileContents(File f) throws IOException {
-		FileMonitor monitor = fileMonitors.get(f);
-		boolean hasChanged = (monitor == null || monitor.hasChanged());
-		if (monitor == null) {
-			monitor = new FileMonitor(f);
-			fileMonitors.put(f, monitor);
-		}
-		if (hasChanged) {
-			readAndCacheGameFileContents(f);
-		}
-		return hasChanged;
-	}
-
-	private SaveDb.GameFileContents readAndCacheGameFileContents(File f) throws IOException {
 		byte[] data;
 		if (f.getName().endsWith(".zip")) {
 			data = readFileOrZipContents(f);
 		} else {
 			data = Utils.readFileN(f, SaveParser.MAX_OFFSET);
 		}
-		SaveParser sp = new SaveParser(data);
-		SaveDb.GameFileContents contents = sp.getGameFileContents();
-		contents.setFile(Utils.getRelativePath(f, saveFolder));
-		putGameInfo(contents);
+		contents = parseGameInfo(f, data);
+		updateGameFileCache(contents);
+		savedGames.games.add(contents);
 		return contents;
 	}
 
+	private GameFileContents parseGameInfo(File file, byte[] data) {
+		SaveParser sp = new SaveParser(data);
+		SaveDb.GameFileContents contents = sp.getGameFileContents();
+		contents.setFile(Utils.getRelativePath(file, saveFolder));
+		return contents;
+	}
+
+	public synchronized void fileUpdated(File file, byte[] data) {
+		if (ignoreFile(file) || !file.getParentFile().equals(saveFolder))
+			return;
+
+		SaveDb.GameFileContents contents = parseGameInfo(file, data);
+		GameFileContents oldContents = getGameInfo(file);
+
+		String oldName = (oldContents != null ? oldContents.getSavedGameName() : "");
+		String newName = contents.getSavedGameName();
+		updateGameFileCache(contents);
+		if (contents.equals(oldContents)) {
+			return;
+		}
+		System.out.print("Updated data for: " + file.getName());
+		int index = savedGames.games.indexOf(oldContents);
+		if (index != -1) {
+			savedGames.games.set(index, contents);
+		} else {
+			savedGames.games.add(contents);
+		}
+		if (!oldName.equals(newName)) {
+			System.out.print(". Game name changed from \"" + oldName + "\" to \"" + newName + "\".");
+			for (Runnable listener : saveGameNameListeners) {
+				SwingUtilities.invokeLater(listener);
+			}
+		}
+		System.out.println();
+		save();
+	}
+
 	private String generateBackupSuffix() {
-	      byte[] arr = new byte[3];
-	      new Random().nextBytes(arr);
-	      return ".old" + new CrockfordBase32().encodeToString(arr);
+		byte[] arr = new byte[3];
+		new Random().nextBytes(arr);
+		return ".old" + new CrockfordBase32().encodeToString(arr);
 	}
 
 	private static void renameFileOrDie(File from, File to) {
@@ -326,6 +321,10 @@ public class SaveDb {
 			JOptionPane.showMessageDialog(null, "Could not rename file: " + from + " to: " + to);
 			System.exit(-1);
 		}
+	}
+
+	private void updateGameFileCache(GameFileContents game) {
+		gameFileCache.put(new File(saveFolder + "/" + game.filePath), game);
 	}
 
 	private void load() {
@@ -347,11 +346,11 @@ public class SaveDb {
 		if (savedGames.comments == null)
 			savedGames.comments = new HashMap<String, String>();
 		for (GameFileContents game : savedGames.games) {
-			gameFileCache.put(new File(saveFolder + "/" + game.filePath), game);
+			updateGameFileCache(game);
 		}
 	}
 
-	public void save() {
+	public synchronized void save() {
 		File file = getFile();
 		System.out.println("Writing to " + file);
 		try {
@@ -361,11 +360,11 @@ public class SaveDb {
 		}
 	}
 
-	public String getComment(String gameId) {
+	public synchronized String getComment(String gameId) {
 		return savedGames.comments.get(gameId);
 	}
 
-	public void setComment(String gameId, String text) {
+	public synchronized void setComment(String gameId, String text) {
 		if (text.isEmpty()) {
 			savedGames.comments.remove(gameId);
 		} else {
@@ -377,21 +376,21 @@ public class SaveDb {
 		private List<GameFileContents> games = new ArrayList<GameFileContents>();
 		private Map<String, String> comments = new HashMap<String, String>();
 
-	    public void setGames(List<GameFileContents> games) {
-	        this.games = games;
-	    }
+		public void setGames(List<GameFileContents> games) {
+			this.games = games;
+		}
 
-	    public List<GameFileContents> getGames() {
-	    	return games;
-	    }
+		public List<GameFileContents> getGames() {
+			return games;
+		}
 
-	    public void setComments(Map<String, String> comments) {
-	        this.comments = comments;
-	    }
+		public void setComments(Map<String, String> comments) {
+			this.comments = comments;
+		}
 
-	    public Map<String, String> getComments() {
-	    	return comments;
-	    }
+		public Map<String, String> getComments() {
+			return comments;
+		}
 	}
 
 	public static class GameFileContents {
@@ -445,6 +444,16 @@ public class SaveDb {
 
 		public String getSavedGameName() {
 			return savedGameName;
+		}
+
+		public boolean equals(GameFileContents other) {
+			return other != null && filePath.equals(other.filePath) && gameId.equals(other.gameId) && turnNumber == other.turnNumber &&
+					countryName.equals(other.countryName) && savedGameName.equals(other.savedGameName);
+		}
+
+		@Override
+		public boolean equals(Object other) {
+			return (other instanceof GameFileContents) && equals((GameFileContents) other);
 		}
 	}
 }

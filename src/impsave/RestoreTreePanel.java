@@ -114,4 +114,8 @@ public class RestoreTreePanel extends JPanel implements TreeSelectionListener {
 			infoPanel.setGameInfo(null);
 		}
 	}
+
+	public SaveDb getSaveDb() {
+		return saveDb;
+	}
 }

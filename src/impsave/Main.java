@@ -20,7 +20,7 @@ public class Main implements Runnable {
 			System.out.println("ERROR: Can't find 'Save' folder.");
 			return;
 		}
-		FolderMonitor monitor = new FolderMonitor(folder, ".imp", new Sleeper(250));
+		FolderMonitor monitor = new FolderMonitor(c.getSaveDb(), folder, ".imp", new Sleeper(250));
 		System.out.println("Monitoring files in: " + folder.getAbsolutePath());
 		new Thread(monitor).start();
 	}

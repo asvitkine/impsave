@@ -8,18 +8,22 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class FileAutoSaver implements Runnable {
+	private SaveDb saveDb;
 	private File file;
 	private String ext;
 	private FileMonitor monitor;
 	private byte[] content;
 	private Sleeper idler;
+	private boolean firstPass;
 
-	public FileAutoSaver(File file, String ext) throws IOException {
+	public FileAutoSaver(SaveDb saveDb, File file, String ext) throws IOException {
+		this.saveDb = saveDb;
 		this.file = file;
 		this.ext = ext;
 		this.monitor = new FileMonitor(file);
 		this.content = Utils.readFile(file);
 		this.idler = new Sleeper(50);
+		this.firstPass = true;
 	}
 
 	@Override
@@ -37,14 +41,18 @@ public class FileAutoSaver implements Runnable {
 			return;
 		}
 
-		// TODO: Write the very first one.
-		// TODO: Read what's in the folder, so that relaunching doesn't confuse things.
+		if (firstPass) {
+			saveDb.fileUpdated(file, content);
+			return;
+		}
+
 		File historyDir = getBackupDir(file);
 		historyDir.mkdir();
 		File autosave = chooseAutosaveName(historyDir);
 		System.out.printf("Saved [%s/%s] (%d reads)\n", historyDir.getName(), autosave.getName(), numReads);
 		saveFile(file.getName(), autosave, content);
 		autosave.setLastModified(monitor.lastModifiedDate().getTime());
+		saveDb.fileUpdated(file, content);
 	}
 
 	private static void saveFile(String fileName, File zipFile, byte[] content) {

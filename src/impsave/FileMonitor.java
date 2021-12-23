@@ -12,7 +12,6 @@ public class FileMonitor {
 		this.file = file;
 		if (!file.exists())
 			throw new FileNotFoundException(file.getAbsolutePath());
-		hasChanged();
 	}
 
 	public Date lastModifiedDate() {

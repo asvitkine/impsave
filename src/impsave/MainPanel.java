@@ -18,7 +18,7 @@ public class MainPanel extends JFrame implements ChangeListener {
 		tabs = new JTabbedPane();
 		tabs.addTab("Log", new Console());
 		tabs.addChangeListener(this);
-		restoreTreePanel =  new RestoreTreePanel(saveFolder);
+		restoreTreePanel = new RestoreTreePanel(saveFolder);
 		tabs.add("Restore", restoreTreePanel);
 
 		getContentPane().add(new LaunchPanel(imperialismApp), BorderLayout.NORTH);
@@ -40,5 +40,9 @@ public class MainPanel extends JFrame implements ChangeListener {
 		} else {
 			restoreTreePanel.clear();
 		}
+	}
+
+	public SaveDb getSaveDb() {
+		return restoreTreePanel.getSaveDb();
 	}
 }

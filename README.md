@@ -46,8 +46,8 @@ automatically back up saved games, so that games could be restored reliably in a
 multiplayer setting.
 
 In addition, since the group encountered a few common crash bugs, the author also
-reverse-engineered the binary to fixed a few of them, and built the functionality
-to patch Imperialism the binary into the program.
+reverse-engineered the binary and fixed a few of them, and built the functionality
+to patch the Imperialism binary into the program.
 
 It is now many years later when ImpSave is being shared publicly via GitHub, with
 a bit of recent rework and improvements. ImpSave is being released in memory of

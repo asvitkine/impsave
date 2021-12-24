@@ -134,9 +134,12 @@ public class SaveDb {
 					if (filename.endsWith(ext)) {
 						String nameNoExt = filename.substring(0, filename.length() - ext.length());
 						turnStr = FileAutoSaver.getTurnString(nameNoExt, contents.getCountry());
+						turnStr += " [" + getOriginalFileName(f) + " backup]";
 						break;
 					}
 				}
+			} else {
+				turnStr += " [" + f.getName() + "]";
 			}
 
 			info.turnToFile.put(turnStr, f);

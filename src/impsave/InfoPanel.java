@@ -249,10 +249,6 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		@Override
 		public String toString() {
 			String label = turn;
-			String targetName = saveDb.getOriginalFileName(file);
-			if (targetName != null) {
-				label += " (" + targetName + ")";
-			}
 			return label;
 		}
 	}

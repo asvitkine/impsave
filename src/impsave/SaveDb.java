@@ -75,7 +75,7 @@ public class SaveDb {
 	}
 
 	public synchronized void scan() {
-		System.out.println("Scanning...");
+		System.out.println("Scanning files...");
 		soloGames = new HashMap<String, GameInfo>();
 		hostedGames = new HashMap<String, GameInfo>();
 		joinedGames = new HashMap<String, GameInfo>();
@@ -134,7 +134,13 @@ public class SaveDb {
 					if (filename.endsWith(ext)) {
 						String nameNoExt = filename.substring(0, filename.length() - ext.length());
 						turnStr = FileAutoSaver.getTurnString(nameNoExt, contents.getCountry());
-						turnStr += " [" + getOriginalFileName(f) + " backup]";
+						String slotName = getOriginalFileName(f);
+						if (slotName == null) {
+							// e.g. joined game
+							turnStr += " [backup]";
+						} else {
+							turnStr += " [" + slotName + " backup]";
+						}
 						break;
 					}
 				}
@@ -354,12 +360,16 @@ public class SaveDb {
 	}
 
 	public synchronized void save() {
-		File file = getFile();
-		System.out.println("Writing to " + file);
 		try {
-			xml.writeSavedGames(savedGames, new FileOutputStream(file));
+			ByteArrayOutputStream data = new ByteArrayOutputStream();
+			xml.writeSavedGames(savedGames, data);
+			File file = getFile();
+			if (Utils.writeToFileIfNotSame(file, data.toByteArray())) {
+				System.out.println("Wrote to " + file);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			return;
 		}
 	}
 

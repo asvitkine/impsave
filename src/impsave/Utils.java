@@ -2,10 +2,12 @@ package impsave;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -21,6 +23,23 @@ public class Utils {
 		f.read(data);
 		f.close();
 		return data;
+	}
+
+	public static boolean writeToFileIfNotSame(File file, byte[] data) throws IOException {
+		if (file.exists()) {
+			byte[] existingData = Utils.readFile(file);
+			if (Arrays.equals(data, existingData)) {
+				return false;
+			}
+		}
+		FileOutputStream out = new FileOutputStream(file);
+		try {
+			out.write(data);
+			out.flush();
+		} finally {
+			out.close();
+		}
+		return false;
 	}
 
 	public static String readZipComment(File f) throws IOException {

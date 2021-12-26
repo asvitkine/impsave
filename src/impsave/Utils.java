@@ -1,5 +1,6 @@
 package impsave;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -67,6 +68,32 @@ public class Utils {
         	out.write(buffer, 0, len);
         	len = in.read(buffer);
         }
+	}
+
+	private static void close(Closeable in) {
+		if (in != null) {
+			try {
+				in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void copyFile(File from, File to) {
+		FileInputStream in = null;
+		FileOutputStream out = null;
+		try {
+			in = new FileInputStream(from);
+			out = new FileOutputStream(to);
+			copy(in, new FileOutputStream(to));
+			out.flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			close(in);
+			close(out);
+		}
 	}
 
 	public static File addFileNameSuffix(File file, String suffix) {

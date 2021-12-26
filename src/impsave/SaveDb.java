@@ -15,7 +15,6 @@ import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import crockford.CrockfordBase32;
@@ -327,16 +326,6 @@ public class SaveDb {
 		return ".old" + new CrockfordBase32().encodeToString(arr);
 	}
 
-	private static void renameFileOrDie(File from, File to) {
-		try {
-			from.renameTo(to);
-		} catch (Exception e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Could not rename file: " + from + " to: " + to);
-			System.exit(-1);
-		}
-	}
-
 	private void updateGameFileCache(GameFileContents game) {
 		gameFileCache.put(new File(saveFolder + "/" + game.filePath), game);
 	}
@@ -352,8 +341,8 @@ public class SaveDb {
 		} catch (Exception e) {
 			System.out.println("Error loading file: " + file);
 			File backupFile = Utils.addFileNameSuffix(file, generateBackupSuffix());
-			System.out.println("Renaming existing file to: " + backupFile);
-			renameFileOrDie(file, backupFile);
+			System.out.println("Backing up existing file to: " + backupFile);
+			Utils.copyFile(file, backupFile);
 			savedGames = new SavedGames();
 		}
 

@@ -22,7 +22,7 @@ import crockford.CrockfordBase32;
 
 public class SaveDb {
 	private static final String EXT = ".imp";
-	private static final String[] EXTS = new String[] { EXT, EXT + ".zip" };
+	private static final String[] EXTS = new String[] { EXT, EXT + "z", EXT + ".zip" };
 
 	public static final String SOLO_GAME_PREFIX = "slot";
 	public static final String HOSTED_GAME_PREFIX = "mult";

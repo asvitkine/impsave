@@ -50,7 +50,7 @@ public class FileAutoSaver implements Runnable {
 		File historyDir = getBackupDir(file);
 		historyDir.mkdir();
 		File autosave = chooseAutosaveName(historyDir);
-		System.out.printf("Saved [%s/%s] (%d reads)\n", historyDir.getName(), autosave.getName(), numReads);
+		System.out.printf("Saving [%s/%s] (%d reads)\n", historyDir.getName(), autosave.getName(), numReads);
 		saveFile(file.getName(), autosave, content);
 		autosave.setLastModified(monitor.lastModifiedDate().getTime());
 		saveDb.fileUpdated(file, content);
@@ -66,6 +66,7 @@ public class FileAutoSaver implements Runnable {
 			zos.closeEntry();
 			zos.close();
 		} catch (IOException e) {
+			System.out.println("ERROR: Could not write to file.");
 			e.printStackTrace();
 		}
 	}
@@ -113,7 +114,9 @@ public class FileAutoSaver implements Runnable {
 		// Check that the uncompressed version doesn't exist, to avoid name re-use.
 		if (new File(historyDir, filename).exists())
 			return null;
-		File file = new File(historyDir, filename + ".zip");
+		// Note: We used to use .imp.zip, but apparently some AVs interfere with
+		// creating such files, so we use .impz now.
+		File file = new File(historyDir, filename + "z");
 		return file.exists() ? null : file;
 	}
 

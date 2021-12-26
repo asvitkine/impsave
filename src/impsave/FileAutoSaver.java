@@ -73,13 +73,20 @@ public class FileAutoSaver implements Runnable {
 	public static String formatTurn(int turnNumber) {
 		return String.format("%03d", turnNumber);
 	}
+
+	private static String sanitizeCountryName(String countryName) {
+		// Prevent illegal chars in filenames. Note: Imperialism
+		// country names are ASCII, so no need for unicode checking.
+		return countryName.replaceAll("[^a-zA-Z0-9\\._]+", "_");
+	}
+
 	public static String formatName(String countryName, int turnNumber) {
-		return String.format("%s-%03d", countryName, turnNumber);
+		return String.format("%s-%03d", sanitizeCountryName(countryName), turnNumber);
 	}
 
 	public static String getTurnString(String name, String countryName) {
 		// May include the sub turn, like 005-2.
-		return name.substring(countryName.length() + 1);
+		return name.substring(sanitizeCountryName(countryName).length() + 1);
 	}
 
 	private File chooseAutosaveName(File historyDir) {

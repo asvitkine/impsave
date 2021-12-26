@@ -63,7 +63,7 @@ public class Console extends JPanel {
 			for (String line : chunks) {
 				if (line.length() < 1)
 					continue;
-				log.append(line.stripTrailing() + "\n");
+				log.append(line + "\n");
 			}
 			log.setCaretPosition(log.getDocument().getLength());
 		}

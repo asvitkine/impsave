@@ -22,7 +22,8 @@ import crockford.CrockfordBase32;
 
 public class SaveDb {
 	private static final String EXT = ".imp";
-	private static final String[] EXTS = new String[] { EXT, EXT + "z", EXT + ".zip" };
+	private static final String EXT_ZIPPED = ".impz";
+	private static final String[] EXTS = new String[] { EXT, EXT_ZIPPED, EXT + ".zip" };
 
 	public static final String SOLO_GAME_PREFIX = "slot";
 	public static final String HOSTED_GAME_PREFIX = "mult";
@@ -185,12 +186,16 @@ public class SaveDb {
 		return null;
 	}
 
+	private static boolean isZipped(File file) {
+		return file.getName().endsWith(EXT_ZIPPED) || file.getName().endsWith(".zip");
+	}
+
 	private void copyFileOrZipContents(File file, OutputStream out, String gameName) throws IOException {
 		FileInputStream in = new FileInputStream(file);
 		InputStream source;
 
 		ZipInputStream zin = null;
-		if (file.getName().endsWith(".zip")) {
+		if (isZipped(file)) {
 			zin = new ZipInputStream(in);
 			ZipEntry entry = zin.getNextEntry();
 			if (entry == null) {
@@ -268,7 +273,7 @@ public class SaveDb {
 		if (contents != null)
 			return contents;
 		byte[] data;
-		if (f.getName().endsWith(".zip")) {
+		if (isZipped(f)) {
 			data = readFileOrZipContents(f);
 		} else {
 			data = Utils.readFileN(f, SaveParser.MAX_OFFSET);

@@ -6,25 +6,22 @@ import java.net.URLDecoder;
 
 public class Context {
 	private String appPath;
-	
+
 	public Context() {
 		appPath = getJarOrAppPath();
 	}
-	
+
 	public File getJarOrAppFile() {
 		return new File(appPath);
 	}
-	
+
 	public File getSaveDirectory() {
-		String savePath = System.getenv("SAVE_FOLDER");
-		if (savePath != null)
-			return new File(savePath);
-		String appLocation = getApplicationLocation();
+		String appLocation = getApplicationLocationOrWorkingDir();
 		return new File(appLocation, "Save");
 	}
 
 	public File getImperialismApp() {
-		return new File(getApplicationLocation() + "/Imperialism.exe");
+		return new File(getApplicationLocationOrWorkingDir() + "/Imperialism.exe");
 	}
 
 	public String getSaveExtension() {
@@ -35,11 +32,12 @@ public class Context {
 		return Context.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 	}
 
-	private static String getApplicationLocation() {
+	private static String getApplicationLocationOrWorkingDir() {
 		String location = getJarOrAppPath();
-		if (location.endsWith(".jar") || location.endsWith(".exe")) {
-			location = new File(location).getParent();
+		if (!location.endsWith(".jar") && !location.endsWith(".exe")) {
+			return System.getProperty("user.dir");
 		}
+		location = new File(location).getParent();
 		// we stripped off the jar, but it may still be deep inside the bundle, so:
 		if (location.endsWith(".app/Contents/Resources/Java")) {
 			location = new File(location).getParentFile().getParentFile().getParentFile().getParent();

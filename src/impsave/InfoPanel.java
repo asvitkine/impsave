@@ -164,7 +164,9 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 					BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 			grid.setLayout(new GridLayout(5, 2));
 			JButton button = new JButton("- Autosave -");
-			button.setName(info.fileNamePrefix + "A.imp");
+			String targetFile = info.fileNamePrefix + "A.imp";
+			button.setName(targetFile);
+			button.setToolTipText("Restore to " + targetFile);
 			button.addActionListener(this);
 			grid.add(button);
 			grid.add(new JPanel());
@@ -204,12 +206,15 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 				} else {
 					button.setText(getRestoreButtonNamePrefix(i) + saveDb.getSoloSaveGameName(i));
 				}
-				button.setName(saveDb.getFilename(info.fileNamePrefix, i));
+				String targetFile = saveDb.getFilename(info.fileNamePrefix, i);
+				button.setName(targetFile);
+				button.setToolTipText("Restore to " + targetFile);
 				i++;
 			} else {
 				button.setText("  Select for Restore  ");
 				String targetFile = Utils.truncateAtChar(fileToRestore.getParentFile().getName(), ' ');
 				button.setName(targetFile);
+				button.setToolTipText("Restore to " + targetFile);
 			}
 			button.setEnabled(true);
 		}

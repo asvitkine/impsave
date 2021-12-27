@@ -211,6 +211,10 @@ public class SaveDb {
 		if (gameName != null) {
 			byte[] header = new byte[SaveParser.SAVE_NAME_OFFSET + SaveParser.SAVE_NAME_LENGTH];
 			if (source.read(header) != header.length) {
+				if (zin != null) {
+					zin.closeEntry();
+					zin.close();
+				}
 				in.close();
 				throw new IOException("Couldn't read header!");
 			}
@@ -236,7 +240,11 @@ public class SaveDb {
 		in.close();
 	}
 
-	public synchronized void activateFile(File file, File dest, String gameName) throws IOException {
+	public synchronized void activateFile(File file, String targetSaveFileName, String gameName) throws IOException {
+		File dest = new File(saveFolder.getAbsolutePath() + "/" + targetSaveFileName);
+		if (dest.equals(file.getAbsoluteFile())) {
+			throw new IOException("Cannot restore file onto itself.");
+		}
 		FileOutputStream out = new FileOutputStream(dest);
 		try {
 			copyFileOrZipContents(file, out, gameName);
@@ -294,30 +302,34 @@ public class SaveDb {
 		if (ignoreFile(file) || !file.getParentFile().equals(saveFolder))
 			return;
 
-		SaveDb.GameFileContents contents = parseGameInfo(file, data);
-		GameFileContents oldContents = getGameInfo(file);
+		try {
+			SaveDb.GameFileContents contents = parseGameInfo(file, data);
+			GameFileContents oldContents = getGameInfo(file);
 
-		String oldName = (oldContents != null ? oldContents.getSavedGameName() : "");
-		String newName = contents.getSavedGameName();
-		updateGameFileCache(contents);
-		if (contents.equals(oldContents)) {
-			return;
-		}
-		System.out.print("Updated data for: " + file.getName());
-		int index = savedGames.games.indexOf(oldContents);
-		if (index != -1) {
-			savedGames.games.set(index, contents);
-		} else {
-			savedGames.games.add(contents);
-		}
-		if (!oldName.equals(newName)) {
-			System.out.print(". Game name changed from \"" + oldName + "\" to \"" + newName + "\".");
-			for (Runnable listener : saveGameNameListeners) {
-				SwingUtilities.invokeLater(listener);
+			String oldName = (oldContents != null ? oldContents.getSavedGameName() : "");
+			String newName = contents.getSavedGameName();
+			updateGameFileCache(contents);
+			if (contents.equals(oldContents)) {
+				return;
 			}
+			System.out.print("Updated data for: " + file.getName());
+			int index = savedGames.games.indexOf(oldContents);
+			if (index != -1) {
+				savedGames.games.set(index, contents);
+			} else {
+				savedGames.games.add(contents);
+			}
+			if (!oldName.equals(newName)) {
+				System.out.print(". Game name changed from \"" + oldName + "\" to \"" + newName + "\".");
+				for (Runnable listener : saveGameNameListeners) {
+					SwingUtilities.invokeLater(listener);
+				}
+			}
+			System.out.println();
+			save();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		System.out.println();
-		save();
 	}
 
 	private String generateBackupSuffix() {

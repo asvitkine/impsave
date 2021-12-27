@@ -91,35 +91,14 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 
 		// Copy over the selected file...
 		JButton button = (JButton) event.getSource();
-		String buttonText = button.getText();
-		String targetName = null;
-		for (int i = 0; i < 8; i++) {
-			if (buttonText.startsWith(getRestoreButtonNamePrefix(i))) {
-				targetName = saveDb.getFilename(info.fileNamePrefix, i);
-			}
-		}
+		String targetName = button.getName();
 		File file = getFileToRestore();
-		File parentDir = file.getParentFile();
-		String parentDirName = parentDir.getName();
-		System.out.printf("Activating [%s/%s]\n", parentDirName, file.getName());
-		if (targetName == null) {
-			// Either it's an autosave or the button text is out of sync with the database.
-			String suffix = " autosaves";
-			if (!parentDirName.endsWith(suffix)) {
-				JOptionPane.showMessageDialog(this, "Could not restore game.");
-				System.out.println("ERROR: Unexpected dir name: " + parentDir);
-				return;
-			}
-			targetName = parentDirName.substring(0, parentDirName.length() - suffix.length());
-
-		}
-		File dest = new File(parentDir.getParentFile().getAbsolutePath() + "/" + targetName);
+		System.out.printf("Activating [%s/%s]\n", file.getParentFile().getName(), file.getName());
 		try {
-			saveDb.activateFile(file, dest, gameName);
+			saveDb.activateFile(file, targetName, gameName);
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, "Could not restore game.");
 			System.err.println("Error activating: " + e.getMessage());
-			e.printStackTrace();
 			return;
 		}
 		System.out.println("Activated as: " + targetName);
@@ -185,6 +164,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 					BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 			grid.setLayout(new GridLayout(5, 2));
 			JButton button = new JButton("- Autosave -");
+			button.setName(info.fileNamePrefix + "A.imp");
 			button.addActionListener(this);
 			grid.add(button);
 			grid.add(new JPanel());
@@ -215,6 +195,7 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 		if (restoreButtons == null) {
 			return;
 		}
+		File fileToRestore = getFileToRestore();
 		int i = 0;
 		for (JButton button : restoreButtons) {
 			if (restoreButtons.length == 8) {
@@ -223,14 +204,16 @@ public class InfoPanel extends JPanel implements ItemListener, KeyListener, Acti
 				} else {
 					button.setText(getRestoreButtonNamePrefix(i) + saveDb.getSoloSaveGameName(i));
 				}
+				button.setName(saveDb.getFilename(info.fileNamePrefix, i));
 				i++;
 			} else {
 				button.setText("  Select for Restore  ");
+				String targetFile = Utils.truncateAtChar(fileToRestore.getParentFile().getName(), ' ');
+				button.setName(targetFile);
 			}
 			button.setEnabled(true);
 		}
-		TurnEntry entry = (TurnEntry) turnSelector.getSelectedItem();
-		gameNameField.setText(saveDb.getGameInfo(entry.file).getSavedGameName());
+		gameNameField.setText(saveDb.getGameInfo(fileToRestore).getSavedGameName());
 	}
 
 	private void add(JComponent c) {

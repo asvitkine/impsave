@@ -46,6 +46,7 @@ public class LaunchPanel extends JPanel implements ActionListener {
 			break;
 		case Patcher.FILE_UNKNOWN:
 			statusLabel.setText("Warning: Unknown Imperialism version.");
+			playButton.setEnabled(true);
 			break;
 		case Patcher.FILE_UP_TO_DATE:
 			statusLabel.setText("Imperialism is up to date!");
@@ -80,6 +81,7 @@ public class LaunchPanel extends JPanel implements ActionListener {
 
 		playButton.setEnabled(false);
 		new Thread() {
+			@Override
 			public void run() {
 				ProcessBuilder pb = new ProcessBuilder();
 				pb.command(imperialismApp.getAbsolutePath());

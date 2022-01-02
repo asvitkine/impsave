@@ -30,6 +30,7 @@ public class Patcher {
 		addMD5("5c46a85303a104d991a924062952a865"); // r53
 		addMD5("ebe5f3037fba6ea2e3833b480672c47c"); // r54
 		addMD5("1ee3ccd610801161db799382cb0af599"); // r55
+		addMD5("2a30f1ae71214a739067529b4e3964bc"); // Windowed mode
 	}
 
 	// States:
@@ -57,6 +58,7 @@ public class Patcher {
 			} else if (OLD_MD5S.contains(md5)) {
 				state = FILE_OLD;
 			} else {
+				System.out.println("Unknown version md5: " + md5);
 				state = FILE_UNKNOWN;
 			}
 		} catch (IOException e) {
@@ -111,6 +113,16 @@ public class Patcher {
 		patches.addJmpBackPatch(0x549858, 0x47c12e, 0x54985E, "837874007406FF5074668907");
 		// Fix null dereference at 0x4803dd when a player disconnects.
 		patches.addJmpBackPatch(0x408F8F, 0x47c13f, 0x4803d0, "83790400750331C0C3");
+
+		// Intercept code to SetWindowPlacement() for the initial window to unset WPF_RESTORETOMAXIMIZED and to
+		// set window style flags (via SetWindowLong()) to 0x17CA0000 to enable Windowed mode.
+		patches.addJmpPatch(0x60867c, 0x47c14d, "C7400801000000FF15B4B26A00680000CA176AF0FF761CFF1558B46A00C20400");
+		// Insert a retn 8 in place of SetWindowPlacement() when going to background, so the changes stick,
+		// as otherwise Imperialism sets WPF_RESTORETOMAXIMIZED on background.
+		patches.addPatch(0x408CE7, "c20800");
+		// TODO: Make Windowed mode optional somehow?
+		// TODO: Center window.
+
 		return patches;
 	}
 
